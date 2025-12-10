@@ -1,0 +1,32 @@
+# =============== Unity ===============
+[Ll]ibrary/
+[Tt]emp/
+[Bb]uild/
+[Bb]uilds/
+[Ll]ogs/
+[Oo]bj/
+[Mm]emoryCaptures/
+UserSettings/
+
+# Visual Studio / Rider / VSCode
+.vs/
+.vsconfig
+.idea/
+.vscode/
+*.csproj
+*.sln
+*.user
+*.userprefs
+*.pidb
+*.booproj
+*.svd
+
+# Unity meta files (NEVER ignore these!)
+!*.meta
+
+# OS generated
+.DS_Store
+Thumbs.db
+
+# Crash reports
+sysinfo.txt
