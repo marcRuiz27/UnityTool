@@ -1,0 +1,129 @@
+
+EditorWindow	Ventanas de herramientas
+CustomEditor	Cambiar el Inspector
+Editor	Clase base de inspectores
+OnInspectorGUI	Dibujo del Inspector
+EditorGUILayout	UI rápida
+SerializedProperty representación interna que Unity hace de un campo de un objeto.
+SerializedObject representación interna que Unity hace de un objeto completo
+
+FLujo Correcto:
+serializedObject.Update();          // leer estado actual
+EditorGUILayout.PropertyField(...); // dibujar / modificar
+serializedObject.ApplyModifiedProperties(); // guardar cambios
+[CustomEditor(typeof(MiComponente))]
+public class MiComponenteEditor : Editor
+{
+    SerializedProperty vida;
+
+    void OnEnable()
+    {
+        vida = serializedObject.FindProperty("vida");
+    }
+
+    public override void OnInspectorGUI()
+    {
+        serializedObject.Update();
+
+        EditorGUILayout.PropertyField(vida);
+
+        if (GUILayout.Button("Poner vida a 0"))
+        {
+            vida.intValue = 0;
+        }
+
+        serializedObject.ApplyModifiedProperties();
+    }
+}
+
+Unity serializa:
+
+public
+
+private + [SerializeField]
+
+NO serializa:
+
+static
+
+const
+
+readonly
+
+propiedades (get; set;)
+
+El inspector personalizado implementa edición múltiple mediante SerializedProperty, permitiendo modificar de forma simultánea varios objetos seleccionados con soporte completo de Undo y prefabs.
+
+
+
+Assets/
+ ├ Engine/
+ │   ├ Core/
+ │	 │	├ Events
+ │	 │	│	└EventBus
+ │	 │	├ Math
+ │	 │	└ Utilites
+ │   ├ Grid/
+ │	 │	├ GridData.cs
+ │	 │	├ GridCell.cs
+ │	 │	├ Grid.cs
+ │	 │	├ HeightMap.cs
+ │	 │	└ CoordinateConverter.cs
+ │   ├ Pathfinding/
+ │	 │	├ AStar.cs
+ │	 │	├ PathRequest.cs
+ │	 │	└ PathResult.cs
+ │   ├ Units/
+ │	 │	├ Unit.cs
+ │	 │	├ UnitStats.cs
+ │	 │	├ Faction.cs
+ │	 │	└ UnitOccupier.cs
+ │   ├ Combat/
+ │	 │	├ DamageCalculator.cs
+ │	 │	├ CombatResolver.cs
+ │	 │	├ Effects/
+ │	 │	│   └ StatusEffect.cs
+ │	 │	└ Abilities/
+ │	 │		└ Ability.cs
+ │   ├ TurnSystem/
+ │	 │	├ TurnManager.cs
+ │	 │	├ InitiativeSystem.cs
+ │	 │	└ ActionQueue.cs
+ │   ├ Camera/
+ │	 │ 	├ IsoCameraController.cs
+ │	 │	└ CameraBounds.cs
+ │   ├ Rendering/
+ │   ├ UI/
+ │	 │	├ TurnHUD.cs
+ │	 │	├ UnitInfoPanel.cs
+ │	 │	└ ActionMenu.cs
+ │   └ Data/
+ │		├ UnitData.cs
+ │		├ AbilityData.cs
+ │		├ TileData.cs
+ │		└ StatusEffectData.cs
+ │
+ ├ Game/
+ │   ├ Content/
+ │	 │   ├ Units/
+ │	 │   ├ Maps/
+ │	 │   └ Abilities/		
+ │   ├ Rules/
+ │   └ Scenes/
+ │
+ └ Editor/
+     ├ MapEditor/
+	 │   └ IsoMapEditorWindow.cs
+     ├ UnitEditor/
+	 │   └ UnitEditorWindow.cs
+     ├ Tools/
+		└ GridDebugTool.cs
+     └ Debug/
+	 
+EditorWindow
+
+CustomEditor
+
+Herramientas internas
+
+Menús personalizados
