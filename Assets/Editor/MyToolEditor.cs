@@ -53,6 +53,17 @@ public class MyToolEditor : EditorWindow
 
             so.ApplyModifiedProperties();
 
+
+           /*otra opcion es:
+            foreach(GameObject obj in Selection.gameObjects)
+            {   
+                Renderer renderer = obj.GetComponent<Renderer>();
+           if(renderer != null)
+           {
+           renderer.sharedMaterial.color = myColor;
+           }
+            }*/
+
         }
     }
 }

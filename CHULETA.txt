@@ -127,3 +127,5 @@ CustomEditor
 Herramientas internas
 
 Menús personalizados
+
+Bakear TileMap -> Convertirlo en datos puros
