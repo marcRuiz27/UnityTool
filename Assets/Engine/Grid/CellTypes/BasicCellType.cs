@@ -11,12 +11,27 @@ namespace Assets.Engine.Grid.CellTypes
         public int defaultMovement = 1;
         public bool walkable = true;
 
-        public override void ApplyAttributesToCell(CellData cell)
+        public override bool GetIsWalkable()
         {
-            cell.terrainType = terrain;
-            cell.movementCost = defaultMovement;
-            cell.walkable = walkable;
+            return walkable;
         }
+
+        public override int GetMovementCost()
+        {
+            return defaultMovement;
+        }
+
+        public override TerrainType GetTerrainType()
+        {
+            return terrain;
+        }
+
+        //public override void ApplyAttributesToCell(CellData cell)
+        //{
+        //    cell.TerrainType = terrain;
+        //    cell.MovementCost = defaultMovement;
+        //    cell.Walkable = walkable;
+        //}
     }
 
 

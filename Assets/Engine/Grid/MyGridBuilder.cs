@@ -1,8 +1,7 @@
 ﻿
 using UnityEngine.Tilemaps;
 using UnityEngine;
-using System.Collections.Generic;
-using System;
+using Assets.Engine.Grid.CellTypes;
 
 namespace Assets.Engine.Grid
 {
@@ -14,86 +13,125 @@ namespace Assets.Engine.Grid
         [Header("Sources")]
         [SerializeField]
         private UnityEngine.Grid _grid;
+
         [SerializeField]
-        private Tilemap _basicTilemap;
-  
-        [HideInInspector]
+        private Tilemap[] _listTilemaps;
+
         [SerializeField]
-        private TileBase[] _tilesBase;
-        
-        [SerializeField]
-        private CellTypes.BasicCellType cellsTypes;
+        private CellTypeBase[] _cellTypes;
+
 
         [Header("Output")]
         [SerializeField]
-        private LogicalGridAsset _outputGrid;
+        private LogicalGridAsset _outputLvlGrid;
+
+
+
+
 
         public UnityEngine.Grid GetGrid => _grid;
-        public Tilemap GetSourceTilemap => _basicTilemap;
+        public Tilemap[] GetTilemaps => _listTilemaps;
 
-        public IReadOnlyList<TileBase> TileBases => _tilesBase;
-        public void SetTileBases(TileBase[] tilesBase)
+
+        public void DefineGridLvlSize()
         {
-            _tilesBase = tilesBase;
+            int boundWidth = 0;
+            int boundHeight = 0;
+
+            var _boundsGrid = new BoundsInt();
+
+            if (_listTilemaps == null)
+            {
+                Debug.LogError("No tilemap objects found");
+                return;
+            }
+
+            Debug.Log($"ListTileMap length: {_listTilemaps.Length}");
+            //fins the largest tilemap in both axis
+            for (int i = 0; i < _listTilemaps.Length; i++)
+            {
+                _listTilemaps[i].CompressBounds();
+
+                _boundsGrid = _listTilemaps[i].cellBounds;
+
+                if (boundWidth < _boundsGrid.size.x)
+                    boundWidth = _boundsGrid.size.x;
+
+                if (boundHeight < _boundsGrid.size.y)
+                    boundHeight = _boundsGrid.size.y;
+            }
+
+            _outputLvlGrid.SetSizeLogicalGrid(boundWidth, boundHeight);
         }
-
-        //public TileBase[] elevationTiles;
-        //public BasicCellType elevationTypes;
-
-
 
         public void Bake()
         {
-            _basicTilemap.CompressBounds();
+            DefineGridLvlSize();
 
-            BoundsInt bounds = _basicTilemap.cellBounds;
-
-            int boundWidth = bounds.size.x;
-            int boundHeight = bounds.size.y;
-
-            _outputGrid.SetSizeLogicalGrid(boundWidth, boundHeight);
-            _outputGrid._cells = new CellData[boundWidth * boundHeight];
-
-            for (int y = 0; y < boundHeight; y++)
+            foreach (Tilemap tilemap in _listTilemaps)
             {
-                for (int x = 0; x < boundWidth; x++)
+                for (int y = 0; y < tilemap.cellBounds.size.x; y++)
                 {
-                    Vector3Int cellPos = new Vector3Int(
-                        bounds.xMin + x,
-                        bounds.yMin + y,
-                        0
-                    );
+                    for (int x = 0; x < tilemap.cellBounds.size.y; x++)
+                    {
+                        Vector3Int cellPos = new Vector3Int(tilemap.cellBounds.xMin + x, tilemap.cellBounds.yMin + y, 0);
 
-                    if (!_basicTilemap.HasTile(cellPos))
-                        continue;
+                        if (!tilemap.HasTile(cellPos))
+                            continue;
 
-                    CellData cell = new CellData();
-                    cell.gridPos = new Vector2Int(x, y);
+                        //if +1 cells exists in diferents tilemaps in the same position it will be priorized the one's with a highest layer 
+                        var idxCell = y * tilemap.cellBounds.size.x + x;
+                        var heightCell = tilemap.cellBounds.size.y - idxCell;
+                        return;
+                        //Debug.Log($"{tilemap.gameObject.GetComponent<TilemapRenderer>().sortingLayerID}");
+                        if (tilemap.gameObject.GetComponent<TilemapRenderer>().sortingLayerID < _outputLvlGrid.GetCellByIdx(idxCell).HeightLayer)
+                        {
+                            CellData cell = new CellData();
+                            cell.GridPos = new Vector2Int(x, y);
 
-                    //en isometrico 
-                    cell.worldPos = _basicTilemap.CellToWorld(cellPos) + _grid.cellSize * 0.5f;
+                            var tilebase = tilemap.GetTile(cellPos);
+                            cell.WorldPos = tilemap.CellToWorld(cellPos) + _grid.cellSize * 0.5f;
 
-                    ApplyGround(cell, cellPos);
-                    //ApplyElevation(cell, cellPos);
+                            //ApplyTileProperties(cell, cellPos);
+                            ApplyTileProperties(cell, tilebase.name);
+     
+                            _outputLvlGrid.SetCell(idxCell, cell);
+                        }
 
-                    _outputGrid._cells[y * boundWidth + x] = cell;
+                    }
                 }
+
             }
 
             Debug.Log("Logical Grid baked successfully");
         }
 
-        void ApplyGround(CellData cell, Vector3Int pos)
+
+        private void ApplyTileProperties(CellData cell, string tilemapName)//CellData cell, Vector3Int pos)
         {
-            TileBase tile = _basicTilemap.GetTile(pos);
-            for (int i = 0; i < _tilesBase.Length; i++)
+            //TileBase tile = _listTilemaps.GetTile(pos);
+            //for (int i = 0; i < _tileTypes.Length; i++)
+            //{
+            //    if (_tileTypes[i] == tile)
+            //    {
+            //        cell.TerrainType = _cellTypes.terrain;
+            //        cell.MovementCost = _cellTypes.defaultMovement;
+            //        cell.Walkable = _cellTypes.walkable;
+            //        return;
+            //    }
+            //}
+            foreach(CellTypeBase cellType in _cellTypes)
             {
-                if (_tilesBase[i] == tile)
+                if (cellType == null)
                 {
-                    cell.terrainType = cellsTypes.terrain;
-                    cell.movementCost = cellsTypes.defaultMovement;
-                    cell.walkable = cellsTypes.walkable;
                     return;
+                }
+
+                if(cellType.HasSpecificTileName(tilemapName))
+                {
+                    cell.TerrainType = cellType.GetTerrainType();
+                    cell.MovementCost = cellType.GetMovementCost();
+                    cell.Walkable = cellType.GetIsWalkable();
                 }
             }
         }

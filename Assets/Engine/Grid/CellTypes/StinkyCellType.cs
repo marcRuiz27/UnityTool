@@ -1,6 +1,7 @@
 ﻿
 using Assets.Engine.Grid.CellTypes;
 using UnityEngine;
+using UnityEngine.Tilemaps;
 
 namespace Assets.Engine.Grid
 {
@@ -11,11 +12,28 @@ namespace Assets.Engine.Grid
         public int defaultMovement = 2;
         public bool walkable = true;
 
-        public override void ApplyAttributesToCell(CellData cell)
+        //public override void ApplyAttributesToCell(CellData cell)
+        //{
+        //    cell.TerrainType = terrain;
+        //    cell.MovementCost = defaultMovement;
+        //    cell.Walkable = walkable;
+        //}
+
+        public override bool GetIsWalkable()
         {
-            cell.terrainType = terrain;
-            cell.movementCost = defaultMovement;
-            cell.walkable = walkable;
+            return walkable;
         }
+
+        public override int GetMovementCost()
+        {
+            return defaultMovement;
+        }
+
+        public override TerrainType GetTerrainType()
+        {
+            return terrain;
+        }
+
+
     }
 }
