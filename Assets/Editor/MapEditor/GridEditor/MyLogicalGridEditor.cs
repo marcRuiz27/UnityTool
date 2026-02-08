@@ -1,28 +1,19 @@
-﻿using UnityEditor;
+﻿using Assets.Engine.Grid;
+using UnityEditor;
 using UnityEngine;
-using UnityEngine.UIElements;
 
 namespace Assets.Editor.MapEditor.GridEditor
 {
-    [CustomEditor(typeof(Assets.Engine.Grid.MyGridManager))]    
     public class MyLogicalGridEditor : UnityEditor.Editor
     {
-        
-        public void OnEnable()
+
+        [MenuItem("GameObject/Mi GameObject con Datos", false, 10)]
+        static void Create()
         {
-            if (target == null)
-            {
-                Debug.LogWarning("The target gameObject is null");
-                return;
-            }
+            GameObject go = new GameObject("MyGridManager");
+            go.AddComponent<MyGridManager>();
+
+            Selection.activeGameObject = go;
         }
-
-        //public override void OnInspectorGUI()
-        //{
-        //    DrawDefaultInspector();
-
-        //    EditorGUILayout.LabelField("Grid Size", EditorStyles.boldLabel);
-
-        //}
     }
 }

@@ -8,7 +8,8 @@ namespace Assets.Engine.Grid
     /// <summary>
     /// This class contains all the CellsData
     /// </summary>
-    [CreateAssetMenu(menuName = "Plugin/Grid/Logical Grid")]
+    [CreateAssetMenu(menuName = "Plugin/ScriptableObjects/Grid/Logical Grid",
+        fileName ="LvlGrid")]
     public class LogicalGridAsset : ScriptableObject
     {
         private int _width = 0;

@@ -1,6 +1,0 @@
-﻿
-
-namespace Assets.Engine.Grid
-{
-
-}

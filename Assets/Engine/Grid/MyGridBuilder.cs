@@ -32,7 +32,15 @@ namespace Assets.Engine.Grid
         public UnityEngine.Grid GetGrid => _grid;
         public Tilemap[] GetTilemaps => _listTilemaps;
 
-
+        private void Aver()
+        {
+            var gridInfo = _grid.GetComponent<GridInformation>();
+            Vector3Int cell = new Vector3Int(2, 4, 0);
+            gridInfo.SetPositionProperty(cell, "height", 2);
+            gridInfo.SetPositionProperty(cell, "moveCost", 3);
+            gridInfo.SetPositionProperty(cell, "blocksVision", true);
+          //  Debug.Log($"{a.GetAllPositions()}");
+        }
         public void DefineGridLvlSize()
         {
             int boundWidth = 0;
@@ -66,6 +74,7 @@ namespace Assets.Engine.Grid
 
         public void Bake()
         {
+           // Aver();
             DefineGridLvlSize();
 
             foreach (Tilemap tilemap in _listTilemaps)

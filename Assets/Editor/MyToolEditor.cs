@@ -7,7 +7,7 @@ public class MyToolEditor : EditorWindow
     float velocidadPorDefecto = 10f;
     int vidaPorDefecto = 200;
 
-    [MenuItem("Tools/Mi Herramienta")]
+    [MenuItem("Xbraxy/Mi Herramienta")]
     public static void Abrir()
     {
         //Esto hace que cuando se seleccione del cmbBox la opcion definida suceda algo

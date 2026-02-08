@@ -15,6 +15,6 @@ MonoBehaviour:
   tiles:
   - {fileID: 11400000, guid: ef42dca8a69f89348adab6b92b83a0d2, type: 2}
   - {fileID: 11400000, guid: 1b7749254430cb94d8ebcfefbb0b21d8, type: 2}
-  terrain: 1
+  terrain: 2
   defaultMovement: 1
   walkable: 1
