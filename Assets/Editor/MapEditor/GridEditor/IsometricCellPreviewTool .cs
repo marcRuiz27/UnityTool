@@ -1,19 +1,20 @@
 ﻿using UnityEditor;
 using UnityEngine.Tilemaps;
 using UnityEngine;
+using System;
+using System.Collections.Generic;
 
 public class IsometricCellPreviewTool : EditorWindow
 {
+    private Tool _previousTool;
 
-    [SerializeField]
-    private Tilemap _groundTilemap;
+    private Grid _gridScene;
+    private Vector3 _cursorPositionFirstClick;
+    private readonly List<Vector3Int> _selectedCells = new();
+    private Vector3Int _startCell;
+    private Vector3Int _currentCell;
+    private bool _isDragging;
 
-    [SerializeField]
-    private UnityEngine.Tilemaps.Tile _overlayTiles;
-    private Tilemap _overlayTilemap;
-
-    private Vector3Int _hoveredCell;
-    private bool _hasCell;
 
     [MenuItem("Xbraxy/Grid/Isometric Cell Preview")]
     public static void Open()
@@ -21,152 +22,176 @@ public class IsometricCellPreviewTool : EditorWindow
         GetWindow<IsometricCellPreviewTool>("Iso Cell Preview");
     }
 
-    private void OnGUI()
+    private void TryFindGridInScene()
     {
-        GUILayout.Label("Isometric Cell Preview", EditorStyles.boldLabel);
-
-        _groundTilemap = (Tilemap)EditorGUILayout.ObjectField("TilemapGround", _groundTilemap, typeof(Tilemap), true);
-
-        _overlayTilemap = (Tilemap)EditorGUILayout.ObjectField("Tilemap", _overlayTilemap, typeof(Tilemap), true);
-
-        _overlayTiles = (Tile)EditorGUILayout.ObjectField("Tile template", _overlayTiles, typeof(TileBase), true);
-
-        if (GUILayout.Button("Detect Tilemap"))
-            DetectTilemap();
-
-        if (_overlayTilemap == null)
-            EditorGUILayout.HelpBox("Select a Tilemap and click Detect", MessageType.Info);
-        else
-            EditorGUILayout.LabelField("Tilemap:", _overlayTilemap.name);
-    }
-
-    private void DetectTilemap()
-    {
-        if (Selection.activeGameObject == null)
-            return;
-
-        _groundTilemap = Selection.activeGameObject.GetComponent<Tilemap>();
-        _overlayTilemap = Selection.activeGameObject.GetComponent<Tilemap>();
-        _overlayTiles = Selection.activeGameObject.GetComponent<Tile>();
-
-
-        if (_overlayTilemap == null)
+        if (_gridScene == null)
         {
-            Debug.Log("[DetectTilemap] NOT Tilemap detected");
-            return;
+            _gridScene = FindAnyObjectByType<Grid>();
+            if (_gridScene != null)
+            {
+                Debug.Log($"Grid selected: {_gridScene.name}");
+            }
         }
-
-        Debug.Log("[DetectTilemap] Tilemap detected");
     }
-
     private void OnEnable()
     {
+        _previousTool = Tools.current;
+        Tools.current = Tool.None;
+        TryFindGridInScene();    
+        _selectedCells.Clear();
         SceneView.duringSceneGui += OnSceneGUI;
-    }
 
+    }
     private void OnDisable()
     {
+        Tools.current = _previousTool;
         SceneView.duringSceneGui -= OnSceneGUI;
     }
 
-    // CLAVE para isométrico + Z as Y
-
-    private void DrawCellPreview()
+    private void OnGUI()
     {
 
-        if (!_hasCell || _overlayTilemap == null)
-            return;
+        GUILayout.Label("Isometric Cell Preview", EditorStyles.boldLabel);
 
-        Vector3 center = _overlayTilemap.GetCellCenterWorld(_hoveredCell);
-        // Debug.Log($"Center hovered cell {center}");
-        Vector3 anchorOffset = _overlayTilemap.tileAnchor;
-        // Debug.Log($"AnchorOffset {anchorOffset}");
-        Vector3 size = _overlayTilemap.cellSize;
-        // Debug.Log($"GridCellSize {size}");
+        //_overlayTiles = (TileBase)EditorGUILayout.ObjectField("Tile template", _overlayTiles, typeof(TileBase), true);
 
-        float halfX = size.x * 0.5f;
-        float halfY = size.y * 0.5f;
-        float isoYOffset = size.y * 0.5f;
-        Vector3 baseCenter = center + Vector3.up * isoYOffset;
-
-        Vector3[] diamond =  {
-            baseCenter + new Vector3(0,  halfY, 0),
-            baseCenter + new Vector3( halfX, 0, 0),
-            baseCenter + new Vector3(0, -halfY, 0),
-            baseCenter + new Vector3(-halfX, 0, 0),
-            baseCenter + new Vector3(0,  halfY, 0)
-        };
-        Handles.color = Color.cyan;
-        Handles.DrawAAPolyLine(2f, diamond);
+        if (GUILayout.Button("Detect Tilemap"))
+        {
+            //Tools.current = Tool.None;
+         
+        }
+        //if (_overlayTilemap == null)
+        //    EditorGUILayout.HelpBox("Select a Tilemap and click Detect", MessageType.Info);
+        //else
+        //    EditorGUILayout.LabelField("Tilemap:", _overlayTilemap.name);
     }
 
-    private bool DetectGroundTilemap(Event e)
-    {
-        if (e.type != EventType.MouseDown || e.button != 0)
-            return false;
 
-        Ray ray = HandleUtility.GUIPointToWorldRay(e.mousePosition + Vector2.down * 0.5f);
 
-        Plane plane = new Plane(Vector3.forward, _groundTilemap.transform.position);
 
-        if (!plane.Raycast(ray, out float distance))
-        {
-            _hasCell = false;
-            return false;
-        }
 
-        Vector3 worldPos = ray.GetPoint(distance);
-        Vector3Int cell = _groundTilemap.WorldToCell(worldPos);
-
-        _hoveredCell = cell;
-        _hasCell = true;
-
-        TileBase tile = _groundTilemap.GetTile(cell);
-
-        if (tile == null)
-        {
-            Debug.LogWarning($"Cell {cell} → HAS NO TILE"); ;
-            return false;
-            //#if UNITY_EDITOR
-            //            bool continueAction = EditorUtility.DisplayDialog(
-            //                "No Tile in Ground Tilemap Detected",
-            //                "No tile was detected in the selected cell.\n\nAre you sure you want to continue?",
-            //                "Continue",
-            //                "Cancel"
-            //            );
-
-            //            return continueAction;
-            //#else
-            //        return false;
-            //#endif
-        }
-        Debug.Log($"Cell {cell} → HAS TILE"); ;
-        e.Use();
-        return true;
-    }
-    private void HandleClick(Event e)
-    {
-
-        if (DetectGroundTilemap(e))
-        {
-            //Debug.Log("OK CLICK");
-        }
-    }
+   // TileBase tile = _groundTilemap.GetTile(_hoveredCell);
 
     private void OnSceneGUI(SceneView sceneView)
     {
-        if (_groundTilemap == null || _overlayTilemap == null)
-            return;
-
-        HandleUtility.AddDefaultControl(
-            GUIUtility.GetControlID(FocusType.Passive)
-        );
-
         Event e = Event.current;
-        DrawCellPreview();
-        HandleClick(e);
+        HandleUtility.AddDefaultControl(GUIUtility.GetControlID(FocusType.Passive));
+        Rect fullRect = new Rect(0, 0, sceneView.position.width, sceneView.position.height);
+        EditorGUIUtility.AddCursorRect(fullRect, MouseCursor.Arrow);
+
+        if (!TryGetMouseCursorPosition(e.mousePosition, out var mousePos))
+        {  
+            return; 
+        }
+        if(!TryParseWorldPosToCellPos(mousePos, out var cellPos))
+        {
+            return;
+        }
+
+        var cellCenterPos = GetCenterCell(cellPos);
+        DrawCellInGrid(cellCenterPos, Color.white);
+
+        if (e.type == EventType.MouseDown && e.button == 0)
+        {
+            _startCell = cellPos;
+            _currentCell = cellPos;
+            _isDragging = true;
+            UpdateSelection();
+            e.Use();
+        }
+
+        if (e.type == EventType.MouseDrag && _isDragging)
+        {
+            _currentCell = cellPos;
+            UpdateSelection();
+            e.Use();
+        }
+
+        if (e.type == EventType.MouseUp && e.button == 0)
+        {
+            _isDragging = false;
+            e.Use();
+        }
+
+        foreach (var cell in _selectedCells)
+        {
+            DrawCellInGrid(GetCenterCell(cell), Color.cyan);
+        }
+
 
         sceneView.Repaint();
     }
 
+
+
+    private bool TryGetMouseCursorPosition(in Vector2 mousePosition, out Vector3 worldMousePosition)
+    {
+        worldMousePosition = new Vector3();
+        Ray ray = HandleUtility.GUIPointToWorldRay(mousePosition);
+        Plane plane = new Plane(Vector3.forward, _gridScene.transform.position);
+        if (!plane.Raycast(ray, out float distance))
+        {
+         //   _hasCell = false;
+            return false;
+        }
+        worldMousePosition = ray.GetPoint(distance);
+        return true;
+    }
+
+    private bool TryParseWorldPosToCellPos(in Vector2 worldPos, out Vector3Int cellPos)
+    {
+        cellPos = new Vector3Int();
+        try
+        {
+            cellPos  = _gridScene.WorldToCell(worldPos);
+        }
+        catch(Exception ex)
+        {
+            Debug.LogException(ex);
+            return false;
+        }
+        return true;
+    }
+
+    private Vector3 GetCenterCell(Vector3Int cellPosition)
+    {
+        return _gridScene.GetCellCenterWorld(cellPosition);
+    }
+    private void UpdateSelection()
+    {
+        _selectedCells.Clear();
+
+        int minX = Mathf.Min(_startCell.x, _currentCell.x);
+        int maxX = Mathf.Max(_startCell.x, _currentCell.x);
+        int minY = Mathf.Min(_startCell.y, _currentCell.y);
+        int maxY = Mathf.Max(_startCell.y, _currentCell.y);
+
+        for (int x = minX; x <= maxX; x++)
+        {
+            for (int y = minY; y <= maxY; y++)
+            {
+                _selectedCells.Add(new Vector3Int(x, y, _startCell.z));
+            }
+        }
+    }
+
+    private void DrawCellInGrid(Vector3 cellCenter, Color cellColor)
+    {
+        Vector3 size = _gridScene.cellSize;
+        float halfX = size.x * 0.5f;
+        float halfY = size.y * 0.5f;
+        float isoYOffset = size.y * 0.25f;
+        Vector3 baseCenter = cellCenter + Vector3.down * isoYOffset;
+
+        Vector3[] diamond =  {
+            baseCenter + new Vector3(0, halfY, 0),
+            baseCenter + new Vector3(halfX, 0, 0),
+            baseCenter + new Vector3(0, -halfY, 0),
+            baseCenter + new Vector3(-halfX, 0, 0),
+            baseCenter + new Vector3(0,  halfY, 0)
+        };
+
+        Handles.color = cellColor;
+        Handles.DrawAAPolyLine(2f, diamond);
+    }
 }
