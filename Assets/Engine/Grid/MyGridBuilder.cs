@@ -18,12 +18,12 @@ namespace Assets.Engine.Grid
         private Tilemap[] _listTilemaps;
 
         [SerializeField]
-        private CellTypeBase[] _cellTypes;
+        private CellTypeSO[] _cellTypes;
 
 
         [Header("Output")]
         [SerializeField]
-        private LogicalGridAsset _outputLvlGrid;
+        private LogicalGridSO _outputLvlGrid;
 
 
 
@@ -129,19 +129,19 @@ namespace Assets.Engine.Grid
             //        return;
             //    }
             //}
-            foreach(CellTypeBase cellType in _cellTypes)
+            foreach(var cellType in _cellTypes)
             {
                 if (cellType == null)
                 {
                     return;
                 }
 
-                if(cellType.HasSpecificTileName(tilemapName))
-                {
-                    cell.TerrainType = cellType.GetTerrainType();
-                    cell.MovementCost = cellType.GetMovementCost();
-                    cell.Walkable = cellType.GetIsWalkable();
-                }
+                //if(cellType.HasSpecificTileName(tilemapName))
+                //{
+                //    cell.TerrainType = cellType.GetTerrainType();
+                //    cell.MovementCost = cellType.GetMovementCost();
+                //    cell.Walkable = cellType.GetIsWalkable();
+                //}
             }
         }
 

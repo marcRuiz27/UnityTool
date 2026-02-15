@@ -6,7 +6,7 @@ namespace Assets.Engine.Grid
 {
     public class MyGridManager : MonoBehaviour
     {
-        public LogicalGridAsset levelGrid;
+        public LogicalGridSO levelGrid;
 
         //private CellData[] runtimeCells;
 

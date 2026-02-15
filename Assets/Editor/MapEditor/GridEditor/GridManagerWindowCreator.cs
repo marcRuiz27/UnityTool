@@ -4,10 +4,10 @@ using UnityEngine;
 
 namespace Assets.Editor.MapEditor.GridEditor
 {
-    public class MyLogicalGridEditor : UnityEditor.Editor
+    public class GridManagerWindowCreator : UnityEditor.Editor
     {
 
-        [MenuItem("GameObject/Mi GameObject con Datos", false, 10)]
+        [MenuItem("Xbraxy/GameObject/Mi GameObject con Datos", false, 10)]
         static void Create()
         {
             GameObject go = new GameObject("MyGridManager");

@@ -1,6 +1,7 @@
 ﻿
 using System;
 using System.Collections.Generic;
+using System.Linq;
 using UnityEngine;
 
 namespace Assets.Engine.Grid
@@ -8,9 +9,9 @@ namespace Assets.Engine.Grid
     /// <summary>
     /// This class contains all the CellsData
     /// </summary>
-    [CreateAssetMenu(menuName = "Plugin/ScriptableObjects/Grid/Logical Grid",
+    [CreateAssetMenu(menuName = "Xbraxy/ScriptableObjects/Grid/Logical Grid",
         fileName ="LvlGrid")]
-    public class LogicalGridAsset : ScriptableObject
+    public class LogicalGridSO : ScriptableObject
     {
         private Vector2Int _size;
         private CellData[] _cells;
@@ -36,7 +37,18 @@ namespace Assets.Engine.Grid
             _cells = new CellData[sizeX * sizeY];
             Debug.Log($"LvlGrid: Width={sizeX} Height={sizeY}");
         }
+        public LogicalGridSO(CellData[] cells)
+        {
+            _cells = cells.ToArray();
 
+            int minX, minY, maxX, maxY = 0;
+            
+            foreach (CellData cell in _cells)
+            {
+
+            }
+
+        }
 
     }
 }

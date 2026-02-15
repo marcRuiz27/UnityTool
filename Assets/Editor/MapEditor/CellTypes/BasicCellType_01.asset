@@ -10,13 +10,10 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: adc0a655bb8946f4e82b0a9a5f38b27d, type: 3}
-  m_Name: BasicType
+  m_Name: BasicCellType_01
   m_EditorClassIdentifier: Assembly-CSharp::Assets.Engine.Grid.CellTypes.BasicCellType
-  tiles:
-  - {fileID: 11400000, guid: 624b59f885283004e953b0797a3ddbe5, type: 2}
-  - {fileID: 11400000, guid: 31f0467df86e14d48af8f0e4bf964d63, type: 2}
-  - {fileID: 11400000, guid: a40393526042f8248b05fcfd1ba28914, type: 2}
-  - {fileID: 11400000, guid: ad68a6909829d4a42bbf0b43270b1fe2, type: 2}
-  terrain: 0
-  defaultMovement: 5
-  walkable: 1
+  _editorOverlayTile: {fileID: 11400000, guid: fa1a72983dd0d7f468d55f44a0c8a2ed, type: 2}
+  _terrainType: 1
+  _moveCost: 1
+  _walkable: 1
+  _height: 0
