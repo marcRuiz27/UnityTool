@@ -7,9 +7,23 @@ using Assets.Engine.Grid.CellTypes;
 using Assets.Engine.Grid;
 using Assets.Editor;
 using Assets.Editor.Utilites;
+using System.Linq;
+using Unity.VisualScripting;
 
 public class GridWindowCreator : EditorWindow
 {
+    private enum SelectionMode
+    {
+        None,
+        SelectSingle,
+        SelectArea,
+        Erase,
+        EraseArea,
+        EraseAll,
+        Detect
+    }
+
+    private SelectionMode _selectionMode = SelectionMode.None;
     private Tool _previousTool;
     //--- GRID & TILEMAPS
 
@@ -34,6 +48,8 @@ public class GridWindowCreator : EditorWindow
 
 
     //--- UI 
+    private const float ButtonHeight = 30f;
+    private const float ButtonSpacing = 6f;
     private bool _showFieldsCellTypesSO;
     private bool _showListCellTypesAttached;
     private bool _selectTilesAllow;
@@ -47,15 +63,18 @@ public class GridWindowCreator : EditorWindow
     private void OnEnable()
     {
         _previousTool = Tools.current;
-        Tools.current = Tool.None;
+        if(Tools.current.IsUnityNull())
+        {
+            Tools.current = Tool.None;
+        }
+
         TryFindGridInScene();
         _selectedCells.Clear();
 
-
         _so = new SerializedObject(this);
         _configsProp = _so.FindProperty("_cellTypesArr");
-        SceneView.duringSceneGui += OnSceneGUI;
 
+        SceneView.duringSceneGui += OnSceneGUI;
     }
 
     #region "OnOverride"
@@ -69,8 +88,8 @@ public class GridWindowCreator : EditorWindow
     {
         _previousTool = Tools.current;
         Tools.current = Tool.None;
-
         SceneView.duringSceneGui += OnSceneGUI;
+
     }
     private void OnGUI()
     {
@@ -116,7 +135,7 @@ public class GridWindowCreator : EditorWindow
 
                         bool isSelected = (cell == _selectedCellType);
                         GUIStyle style = isSelected ? MyStyles.Selected : MyStyles.Normal;
-                        GUILayout.Space(isSelected ? 4 : 2);
+                        GUILayout.Space(isSelected ? 3 : 2);
 
                         if (GUILayout.Button(cell.name, style))
                         {
@@ -161,11 +180,55 @@ public class GridWindowCreator : EditorWindow
         //EditorGUILayout.Space(10);
 
         //---3 ALLOW SELECT GIRD MAP CELLS
+        _selectTilesAllow = MyGroupBoxUI.DrawFoldoutBox("3. Selection enable", _selectTilesAllow, () =>
+        {
+            float width = EditorGUIUtility.currentViewWidth - 40;
+            float buttonWidth2 = (width - ButtonSpacing) / 2f;
+            float buttonWidth3 = (width - ButtonSpacing * 2) / 3f;
 
-        _selectTilesAllow = MyGroupBoxUI.DrawFoldoutBox("3. Selection enable",  _selectTilesAllow, () => { });
+            // --- SELECT ---
+            GUILayout.BeginHorizontal();
+            if (GUILayout.Button("Select Single", GUILayout.Width(buttonWidth2), GUILayout.Height(ButtonHeight)))
+                _selectionMode = SelectionMode.SelectSingle;
+
+            if (GUILayout.Button("Select Area", GUILayout.Width(buttonWidth2), GUILayout.Height(ButtonHeight)))
+                _selectionMode = SelectionMode.SelectArea;
+            GUILayout.EndHorizontal();
+
+            GUILayout.Space(8);
+
+            // --- ERASE ---
+            GUILayout.BeginHorizontal();
+            if (GUILayout.Button("Erase Cell", GUILayout.Width(buttonWidth3), GUILayout.Height(ButtonHeight)))
+                _selectionMode = SelectionMode.Erase;
+
+            if (GUILayout.Button("Erase Area", GUILayout.Width(buttonWidth3), GUILayout.Height(ButtonHeight)))
+                _selectionMode = SelectionMode.EraseArea;
+
+            if (GUILayout.Button("Erase Selection", GUILayout.Width(buttonWidth3), GUILayout.Height(ButtonHeight)))
+            {
+                _selectionMode = SelectionMode.EraseAll;
+                _selectedCells.Clear();
+            }
+            GUILayout.EndHorizontal();
+
+            GUILayout.Space(8);
+
+            // --- DETECT ---
+            GUILayout.BeginHorizontal();
+            GUILayout.FlexibleSpace();
+
+            GUI.backgroundColor = _selectionMode == SelectionMode.Detect ? Color.aliceBlue : Color.white;
+            if (GUILayout.Button("Detect Tile", GUILayout.Width(buttonWidth2), GUILayout.Height(ButtonHeight)))
+                _selectionMode = SelectionMode.Detect;
+            GUI.backgroundColor = Color.aliceBlue;
+            GUILayout.FlexibleSpace();
+            GUILayout.EndHorizontal();
+        });
 
 
         //--- 4 OUTPUT GO
+        GUILayout.Space(10);
         if (GUILayout.Button("Create grid"))
         {
             if (_selectedCells == null || _selectedCells.Count == 0)
@@ -224,7 +287,7 @@ public class GridWindowCreator : EditorWindow
 
         var cellCenterPos = GetCenterCell(cellPos);
 
-        if(_selectTilesAllow)
+        if(_selectTilesAllow && _selectionMode != SelectionMode.None)
         {
             DrawCellInGrid(cellCenterPos, Color.white);
 
@@ -233,14 +296,14 @@ public class GridWindowCreator : EditorWindow
                 _startCell = cellPos;
                 _currentCell = cellPos;
                 _isDragging = true;
-                UpdateSelection();
+                ApplySelection(cellPos);
                 e.Use();
             }
 
             if (e.type == EventType.MouseDrag && _isDragging)
             {
                 _currentCell = cellPos;
-                UpdateSelection();
+                ApplySelection(cellPos);
                 e.Use();
             }
 
@@ -296,9 +359,46 @@ public class GridWindowCreator : EditorWindow
     {
         return _gridScene.GetCellCenterWorld(cellPosition);
     }
-    private void UpdateSelection()
+    private void ApplySelection(Vector3Int cellPos)
     {
-        _selectedCells.Clear();
+        switch (_selectionMode)
+        {
+            case SelectionMode.SelectSingle:
+                SelectSingleCell(cellPos);
+                break;
+
+            case SelectionMode.SelectArea:
+                SelectAreaCell();
+                break;
+
+            case SelectionMode.Erase:
+                EraseSingleCell(cellPos);
+                break;
+
+            case SelectionMode.EraseArea:
+                EraseAreaCell();
+                break;
+            case SelectionMode.Detect:
+                Debug.Log("Detect mode not implemented");
+                break;
+        }
+    }
+
+    private void SelectSingleCell(Vector3Int cellPosition)
+    {
+        if (!_selectedCells.Contains(cellPosition))
+        {
+            _selectedCells.Add(cellPosition);
+        }
+    }
+
+    private void EraseSingleCell(Vector3Int cellPosition)
+    {
+        _selectedCells.Remove(cellPosition);
+    }
+    private void SelectAreaCell()
+    {
+       // _selectedCells.Clear();
 
         int minX = Mathf.Min(_startCell.x, _currentCell.x);
         int maxX = Mathf.Max(_startCell.x, _currentCell.x);
@@ -309,7 +409,29 @@ public class GridWindowCreator : EditorWindow
         {
             for (int y = minY; y <= maxY; y++)
             {
-                _selectedCells.Add(new Vector3Int(x, y, _startCell.z));
+                var cellPosition = new Vector3Int(x, y, _startCell.z);
+                if(!_selectedCells.Contains(cellPosition))
+                {
+                    _selectedCells.Add(cellPosition);
+                }
+            }
+        }
+    }
+
+    private void EraseAreaCell()
+    {
+        int minX = Mathf.Min(_startCell.x, _currentCell.x);
+        int maxX = Mathf.Max(_startCell.x, _currentCell.x);
+        int minY = Mathf.Min(_startCell.y, _currentCell.y);
+        int maxY = Mathf.Max(_startCell.y, _currentCell.y);
+
+        for (int x = minX; x <= maxX; x++)
+        {
+            for (int y = minY; y <= maxY; y++)
+            {
+                var cellPosition = new Vector3Int(x, y, _startCell.z);
+                if(_selectedCells.Contains(cellPosition))
+                    _selectedCells.Remove(cellPosition);
             }
         }
     }
